@@ -5,11 +5,11 @@
         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
                 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
         <url>
-            <loc>http://localhost:4000</loc>
+            <loc></loc>
             <lastmod>2019-06-07T00:00:00+00:00</lastmod>
             <priority>1.00</priority>
         </url><url>
-                <loc>http://localhost:4000/book/2020/02/23/first-blog.html</loc>
+                <loc>/book/2020/02/23/first-blog.html</loc>
                 <lastmod>2020-02-23T03:16:36-08:00</lastmod>
                 <changefreq>weekly</changefreq>
                 <priority>0.80</priority>
