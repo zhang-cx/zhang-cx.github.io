@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<link href="https://fonts.googleapis.com/css?family=Merriweather:300|Raleway:400,700" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<title>Mean shift Clustering</title>
+<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Mean shift Clustering | Changxu Zhang Personal Website</title>
+<meta name="generator" content="Jekyll v3.8.6" />
+<meta property="og:title" content="Mean shift Clustering" />
+<meta name="author" content="Changxu Zhang" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Mean shift is a non-parametric feature-space analysis technique for locating the maxima of a density function, a so-called mode-seeking algorithm.[1] Application domains include cluster analysis in computer vision and image processing." />
+<meta property="og:description" content="Mean shift is a non-parametric feature-space analysis technique for locating the maxima of a density function, a so-called mode-seeking algorithm.[1] Application domains include cluster analysis in computer vision and image processing." />
+<meta property="og:site_name" content="Changxu Zhang Personal Website" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-02-23T03:16:36-08:00" />
+<script type="application/ld+json">
+{"description":"Mean shift is a non-parametric feature-space analysis technique for locating the maxima of a density function, a so-called mode-seeking algorithm.[1] Application domains include cluster analysis in computer vision and image processing.","author":{"@type":"Person","name":"Changxu Zhang"},"@type":"BlogPosting","url":"/machine/learning/2020/02/23/first-blog.html","headline":"Mean shift Clustering","dateModified":"2020-02-23T03:16:36-08:00","datePublished":"2020-02-23T03:16:36-08:00","mainEntityOfPage":{"@type":"WebPage","@id":"/machine/learning/2020/02/23/first-blog.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="https://cdn.rawgit.com/jpswalsh/academicons/master/css/academicons.min.css"/>
+  </head>
+  <body>
+    <main class="container">
+      <section class="about">
+        <a href="/"><img src="/assets/portfolio.png" alt="Changxu Zhang"></a>
+        <h2 id="title">
+          <a href="/">Changxu Zhang</a>
+        </h2>
+        <p class="tagline">Student</p>
+        <ul class="social"><a href="https://www.linkedin.com/in/zhang-cx">
+              <li>
+                <i class="icon-linkedin-squared"></i>
+              </li>
+            </a><a href="https://scholar.google.com/citations?user=Ujyc9wwAAAAJ&hl=en">
+              <li>
+                <i class="ai ai-google-scholar ai-3x"></i>
+              </li>
+            </a><a href="https://scholar.google.com/citations?user=Ujyc9wwAAAAJ&hl=en">
+              <li>
+                <i class="ai ai-cv ai-3x"></i>
+              </li>
+            </a><a href="https://github.com/zhang-cx">
+              <li>
+                <i class="icon-github-circled"></i>
+              </li>
+            </a></ul><p>&copy;
+          2020</p>
+      </section>
+      <section class="content">
+        <div class="post-container">
+  <a class="post-link" href="/machine/learning/2020/02/23/first-blog.html">
+    <h2 class="post-title">Mean shift Clustering</h2>
+  </a>
+  <div class="post-meta">
+    <ul class="post-categories"><li>Machine</li><li>Learning</li></ul>
+    <div class="post-date"><i class="icon-calendar"></i>Feb 23, 2020</div>
+  </div>
+  <div class="post">
+    <p>Mean shift is a non-parametric feature-space analysis technique for locating the maxima of a density function, a so-called mode-seeking algorithm.[1] Application domains include cluster analysis in computer vision and image processing.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">mean_shift</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">2.0</span><span class="p">):</span>
+    <span class="n">raw_shape</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">clusters</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">visited</span> <span class="o">=</span> <span class="p">[</span><span class="bp">True</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">while</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">visited</span><span class="p">])</span><span class="o">!=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">cluster_centroid</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">visited</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">visited</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">data</span><span class="o">==</span><span class="n">cluster_centroid</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span><span class="o">=</span><span class="bp">False</span>
+        <span class="n">cluster_frequency</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">temp_data</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">cluster_centroid</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">radius</span><span class="p">:</span>
+                    <span class="n">temp_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                    <span class="n">visited</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="n">cluster_frequency</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">old_centroid</span> <span class="o">=</span> <span class="n">cluster_centroid</span>
+            <span class="n">new_centroid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">temp_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">cluster_centroid</span> <span class="o">=</span> <span class="n">new_centroid</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">new_centroid</span><span class="p">,</span> <span class="n">old_centroid</span><span class="p">):</span>
+                <span class="k">break</span>
+        <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">cluster</span><span class="p">[</span><span class="s">'centroid'</span><span class="p">]</span> <span class="o">-</span> <span class="n">cluster_centroid</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">radius</span><span class="p">:</span>
+                <span class="n">cluster</span><span class="p">[</span><span class="s">'frequency'</span><span class="p">]</span> <span class="o">=</span> <span class="n">cluster</span><span class="p">[</span><span class="s">'frequency'</span><span class="p">]</span> <span class="o">+</span> <span class="n">cluster_frequency</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s">'centroid'</span><span class="p">:</span> <span class="n">cluster_centroid</span><span class="p">,</span>
+                <span class="s">'frequency'</span><span class="p">:</span> <span class="n">cluster_frequency</span>
+            <span class="p">})</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">cluster</span> <span class="ow">in</span> <span class="n">clusters</span><span class="p">:</span>
+        <span class="n">cluster</span><span class="p">[</span><span class="s">'data'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">t</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cluster</span><span class="p">[</span><span class="s">'frequency'</span><span class="p">])</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+        <span class="n">column_frequency</span> <span class="o">=</span> <span class="n">t</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
+        <span class="n">cluster_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">column_frequency</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="nb">max</span><span class="p">(</span><span class="n">column_frequency</span><span class="p">))[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">cluster_index</span>
+    <span class="n">Y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">raw_shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">Y</span>
+</code></pre></div></div>
+
+<p>The vectorized version is</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">mean_shift_vector</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mf">2.0</span><span class="p">):</span>
+    <span class="n">raw_shape</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">clusters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span>
+    <span class="n">cluster_frequencies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)])</span>
+    <span class="n">visited</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">True</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+    <span class="k">while</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">visited</span><span class="p">])</span><span class="o">!=</span><span class="mi">0</span><span class="p">):</span>
+        
+        <span class="n">cluster_centroid</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">visited</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">visited</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">data</span><span class="o">==</span><span class="n">cluster_centroid</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span><span class="o">=</span><span class="bp">False</span>
+        <span class="n">cluster_frequency</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">data</span><span class="o">-</span><span class="n">cluster_centroid</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:],</span><span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">region</span> <span class="o">=</span> <span class="p">(</span><span class="n">distance</span><span class="o">&lt;=</span><span class="n">radius</span><span class="p">)</span>
+            <span class="n">cluster_frequency</span><span class="o">+=</span><span class="n">region</span>
+            <span class="n">visited</span><span class="o">=~</span><span class="p">(</span><span class="n">region</span><span class="o">+</span><span class="p">(</span><span class="o">~</span><span class="n">visited</span><span class="p">))</span>
+            <span class="n">old_centroid</span> <span class="o">=</span> <span class="n">cluster_centroid</span>
+            <span class="n">new_centroid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">region</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">cluster_centroid</span> <span class="o">=</span> <span class="n">new_centroid</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">new_centroid</span><span class="p">,</span> <span class="n">old_centroid</span><span class="p">):</span>
+                <span class="k">break</span>
+                
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">clusters</span><span class="o">.</span><span class="nb">any</span><span class="p">():</span>
+            <span class="n">clusters</span> <span class="o">=</span> <span class="n">cluster_centroid</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cluster_frequencies</span><span class="o">.</span><span class="nb">any</span><span class="p">():</span>
+            <span class="n">cluster_frequencies</span> <span class="o">=</span> <span class="n">cluster_frequency</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:]</span>
+            <span class="k">continue</span>
+        <span class="n">distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">clusters</span><span class="o">-</span><span class="n">cluster_centroid</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:],</span><span class="n">axis</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">region</span> <span class="o">=</span> <span class="p">(</span><span class="n">distance</span><span class="o">&lt;=</span><span class="mf">0.5</span><span class="o">*</span><span class="n">radius</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">region</span><span class="o">.</span><span class="nb">any</span><span class="p">():</span>
+            <span class="n">cluster_frequencies</span><span class="p">[</span><span class="n">region</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">+=</span> <span class="n">cluster_frequency</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">clusters</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">clusters</span><span class="p">,</span><span class="n">cluster_centroid</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:],</span><span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">cluster_frequencies</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cluster_frequencies</span><span class="p">,</span><span class="n">cluster_frequency</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,:],</span><span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">cluster_frequencies</span><span class="p">,</span><span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">Y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">raw_shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">Y</span>
+</code></pre></div></div>
+
+
+  </div></div>
+
+      </section>
+    </main></body>
+</html>
