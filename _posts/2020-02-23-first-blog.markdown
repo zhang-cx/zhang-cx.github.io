@@ -2,7 +2,7 @@
 layout: post
 title:  "Mean shift Clustering"
 date:   2020-02-23 16:46:36 +0530
-categories: Machine Learning
+categories: MachineLearning
 ---
 Mean shift is a non-parametric feature-space analysis technique for locating the maxima of a density function, a so-called mode-seeking algorithm.[1] Application domains include cluster analysis in computer vision and image processing.
 
