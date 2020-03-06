@@ -1,0 +1,11 @@
+---
+layout: post
+title:  "Run Jupyter Notebook on AWS"
+date:   2020-03-05 22:27:36 +0530
+categories: Tools
+---
+We can project the 8888 port of the server to other 8xxx port on the local computer.
+
+```bash
+ssh -L 8212:localhost:8888 ubuntu@ip-address
+```
