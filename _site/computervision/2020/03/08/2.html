@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<link href="https://fonts.googleapis.com/css?family=Merriweather:300|Raleway:400,700" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<title>Object Detection with HoG</title>
+<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Object Detection with HoG | Changxu Zhang Personal Website</title>
+<meta name="generator" content="Jekyll v3.8.6" />
+<meta property="og:title" content="Object Detection with HoG" />
+<meta name="author" content="Changxu Zhang" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Object Detection with HoG" />
+<meta property="og:description" content="Object Detection with HoG" />
+<meta property="og:site_name" content="Changxu Zhang Personal Website" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-03-08T09:57:36-07:00" />
+<script type="application/ld+json">
+{"description":"Object Detection with HoG","author":{"@type":"Person","name":"Changxu Zhang"},"@type":"BlogPosting","url":"/computervision/2020/03/08/2.html","headline":"Object Detection with HoG","dateModified":"2020-03-08T09:57:36-07:00","datePublished":"2020-03-08T09:57:36-07:00","mainEntityOfPage":{"@type":"WebPage","@id":"/computervision/2020/03/08/2.html"},"@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="https://cdn.rawgit.com/jpswalsh/academicons/master/css/academicons.min.css"/>
+  </head>
+  <body>
+    <main class="container">
+      <section class="about">
+        <a href="/"><img src="/assets/portfolio.png" alt="Changxu Zhang"></a>
+        <h2 id="title">
+          <a href="/">Changxu Zhang</a>
+        </h2>
+        <p class="tagline">Student</p>
+        <ul class="social"><a href="https://www.linkedin.com/in/zhang-cx">
+              <li>
+                <i class="icon-linkedin-squared"></i>
+              </li>
+            </a><a href="https://scholar.google.com/citations?user=Ujyc9wwAAAAJ&hl=en">
+              <li>
+                <i class="ai ai-google-scholar ai-3x"></i>
+              </li>
+            </a><a href="https://scholar.google.com/citations?user=Ujyc9wwAAAAJ&hl=en">
+              <li>
+                <i class="ai ai-cv ai-3x"></i>
+              </li>
+            </a><a href="https://github.com/zhang-cx">
+              <li>
+                <i class="icon-github-circled"></i>
+              </li>
+            </a></ul><p>&copy;
+          2020</p>
+      </section>
+      <section class="content">
+        <div class="post-container">
+  <a class="post-link" href="/computervision/2020/03/08/2.html">
+    <h2 class="post-title">Object Detection with HoG</h2>
+  </a>
+  <div class="post-meta">
+    <ul class="post-categories"><li>ComputerVision</li></ul>
+    <div class="post-date"><i class="icon-calendar"></i>Mar 8, 2020</div>
+  </div>
+  <div class="post">
+    <h1 id="object-detection-with-hog">Object Detection with HoG</h1>
+
+<h2 id="1-image-gradients"><strong>1) Image Gradients</strong></h2>
+
+<p>Write a function that takes a grayscale image as input and returns two arrays the same size as the image, the first of which contains the magnitude of the image gradient at each pixel and the second containing the orientation. Your function should filter the image with the simple x- and y-derivative filters as question 2.1. Once you have the derivatives you can compute the orientation and magnitude of the gradient vector at each pixel. On the image boundaries, there should be zero gradients. Include a visualization of the output of your gradient calculate for a small test image. To display the orientation result, please uses a cyclic colormap such as ”hsv” or ”twilight” as in https://matplotlib.org/tutorials/colors/colormaps.html</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">cv2</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span> <span class="nn">skimage.draw</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">conv</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">w</span><span class="p">,</span><span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">pad</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="n">H</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">kH</span><span class="p">,</span> <span class="n">kW</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">outH</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">H</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pad</span> <span class="o">-</span> <span class="n">kH</span><span class="p">)</span> <span class="o">//</span> <span class="n">stride</span>
+    <span class="n">outW</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">W</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pad</span> <span class="o">-</span> <span class="n">kW</span><span class="p">)</span> <span class="o">//</span> <span class="n">stride</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">outH</span><span class="p">,</span> <span class="n">outW</span><span class="p">))</span>
+    <span class="n">x_padded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">pad</span><span class="p">,</span><span class="n">pad</span><span class="p">),</span> <span class="s">'edge'</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">outH</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">outW</span><span class="p">):</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="n">stride</span><span class="p">:</span><span class="n">row</span><span class="o">*</span><span class="n">stride</span><span class="o">+</span><span class="n">kH</span><span class="p">,</span> <span class="n">col</span><span class="o">*</span><span class="n">stride</span><span class="p">:</span><span class="n">col</span><span class="o">*</span><span class="n">stride</span><span class="o">+</span><span class="n">kW</span><span class="p">]</span> <span class="o">*</span> <span class="n">w</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">difference_filter</span><span class="p">(</span><span class="n">img</span><span class="p">):</span>
+    <span class="n">filterx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span><span class="o">-</span><span class="mf">1.</span><span class="p">]])</span>
+    <span class="n">filtery</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">],[</span><span class="o">-</span><span class="mf">1.</span><span class="p">]])</span>
+    <span class="n">xout</span> <span class="o">=</span> <span class="n">conv</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">filterx</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">yout</span> <span class="o">=</span> <span class="n">conv</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">filtery</span><span class="p">)[:,:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">xout</span><span class="p">,</span><span class="n">yout</span><span class="p">],</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">mag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">out</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">threshold</span> <span class="o">=</span> <span class="mf">0.15</span><span class="o">*</span><span class="n">mag</span><span class="o">.</span><span class="nb">max</span><span class="p">()</span>
+    <span class="n">region</span> <span class="o">=</span> <span class="n">mag</span><span class="o">&lt;</span><span class="n">threshold</span>
+    <span class="n">orientation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">yout</span><span class="o">/</span><span class="p">(</span><span class="n">xout</span><span class="o">+</span><span class="mf">1e-8</span><span class="p">))</span>
+    <span class="n">orientation</span><span class="p">[</span><span class="n">region</span><span class="p">]</span><span class="o">=</span><span class="mf">0.0</span>
+    <span class="n">mag</span><span class="p">[</span><span class="n">region</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="n">mag</span><span class="p">,</span><span class="n">orientation</span><span class="p">,</span><span class="n">xout</span><span class="p">,</span><span class="n">yout</span><span class="p">,</span><span class="n">mag</span><span class="o">&gt;</span><span class="n">threshold</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">array</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">array</span><span class="o">-</span><span class="n">array</span><span class="o">.</span><span class="nb">min</span><span class="p">())</span><span class="o">/</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="nb">max</span><span class="p">()</span><span class="o">-</span><span class="n">array</span><span class="o">.</span><span class="nb">min</span><span class="p">())</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s">'question1/bsds_253027.jpg'</span><span class="p">)</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2GRAY</span><span class="p">)</span>
+<span class="n">mag</span><span class="p">,</span><span class="n">orientation</span><span class="p">,</span><span class="n">xout</span><span class="p">,</span><span class="n">yout</span><span class="p">,</span><span class="n">region</span> <span class="o">=</span> <span class="n">difference_filter</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+<span class="n">xout</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">xout</span><span class="p">)</span>
+<span class="n">yout</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">yout</span><span class="p">)</span>
+<span class="c1">#orientation = normalize(orientation)
+</span><span class="n">mag</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">mag</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span> <span class="o">=</span> <span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">141</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'X gradient'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">xout</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="s">'gray'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">142</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'Y gradient'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">yout</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="s">'gray'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">143</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'magnitude'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">mag</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="s">'gray'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">144</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">'orientation'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">orientation</span><span class="p">,</span><span class="n">cmap</span><span class="o">=</span><span class="s">'hsv'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;matplotlib.image.AxesImage at 0x12c2eecd0&gt;
+</code></pre></div></div>
+
+<p><img src="pics/output_6_1.png" alt="png" /></p>
+
+<h2 id="2-histograms-of-gradient-orientations"><strong>2) Histograms of Gradient Orientations</strong></h2>
+
+<p>Write a function that computes gradient orientation histograms over each 8 × 8 block of pixels in an image. Your function should bin the orientation into 9 equal sized bins between −π/2 and π/2. The input of your function will be an image of size H × W . The output should be a three-dimensional array whose size is (H/8) × (W/8) × 9. If the input image dimensions are not a multiple of 8, you should pad the image up to the nearest integer multiple of 8. To determine if a pixel is an edge, we need to choose some threshold. I suggest using a threshold that is 10% of the maximum gradient magnitude in the image. Since each 8 × 8 block will contain a different number of edges, you should normalize the resulting histogram for each block to sum to 1. Test your code on one of your own choice, computing the descriptor and using the provided function in hogvis.py to visualize it. Note: in the discussion above I have assumed 8x8 block size and 9 orientations. In your code you should use parameters in place of these constants.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">hogvis</span><span class="p">(</span><span class="n">descriptor</span><span class="p">,</span><span class="n">bsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span><span class="n">norient</span><span class="o">=</span><span class="mi">9</span><span class="p">):</span>
+    <span class="s">"""
+    This function visualizes a hog descriptor using little
+    icons to indicate orientation. We follow the convention
+    that the first orientation bin starts at a gradient 
+    orientations of -pi/2 and the last bin ends at pi/2
+    
+    Parameters
+    ----------
+    descriptor : 3D float array 
+         HOG descriptor values
+
+    bsize : int
+        The size of the spatial bins in pixels, defaults to 8
+        
+    norient : int
+        The number of orientation histogram bins, defaults to 9
+    
+    Returns
+    -------
+    hog_image : 2D float array
+        Visualization of the hog descriptor with oriented line segments.
+        
+    """</span>   
+
+    <span class="n">d_h</span> <span class="o">=</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">d_w</span> <span class="o">=</span> <span class="n">descriptor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">hog_image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">d_h</span><span class="o">*</span><span class="n">bsize</span><span class="p">,</span><span class="n">d_w</span><span class="o">*</span><span class="n">bsize</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    
+    <span class="c1">#radius of a spatial bin
+</span>    <span class="n">radius</span> <span class="o">=</span> <span class="n">bsize</span> <span class="o">//</span> <span class="mi">2</span>
+    <span class="n">orient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">norient</span><span class="p">)</span>
+
+    <span class="c1">#angle of bin mid-points 0..pi
+</span>    <span class="n">orient_angle</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">orient</span> <span class="o">+</span> <span class="mf">.5</span><span class="p">)</span> <span class="o">/</span> <span class="n">norient</span><span class="p">)</span>
+    
+    <span class="c1">#end points of a line at each orientation
+</span>    <span class="n">vr</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">radius</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">orient_angle</span><span class="p">)</span>
+    <span class="n">vc</span> <span class="o">=</span> <span class="p">(</span><span class="n">radius</span><span class="o">-</span><span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">orient_angle</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d_h</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">d_w</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">o</span><span class="p">,</span> <span class="n">dr</span><span class="p">,</span> <span class="n">dc</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">orient</span><span class="p">,</span><span class="n">vr</span><span class="p">,</span><span class="n">vc</span><span class="p">):</span>
+                <span class="n">centre</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">r</span><span class="o">*</span><span class="n">bsize</span> <span class="o">+</span> <span class="n">radius</span><span class="p">,</span> <span class="n">c</span><span class="o">*</span><span class="n">bsize</span> <span class="o">+</span> <span class="n">radius</span><span class="p">])</span>
+                <span class="n">rr</span><span class="p">,</span> <span class="n">cc</span> <span class="o">=</span> <span class="n">skimage</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">centre</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">dc</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">centre</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dr</span><span class="p">),</span>
+                                          <span class="nb">int</span><span class="p">(</span><span class="n">centre</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">dc</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">centre</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">dr</span><span class="p">))</span>
+                <span class="n">hog_image</span><span class="p">[</span><span class="n">rr</span><span class="p">,</span><span class="n">cc</span><span class="p">]</span> <span class="o">+=</span> <span class="n">descriptor</span><span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">o</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">hog_image</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">histo</span><span class="p">(</span><span class="n">orientation</span><span class="p">,</span><span class="n">region</span><span class="p">,</span><span class="n">size</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span><span class="n">bins</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
+    <span class="n">row</span><span class="p">,</span><span class="n">col</span> <span class="o">=</span> <span class="n">orientation</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">row</span><span class="p">,</span><span class="n">col</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">row</span><span class="o">/</span><span class="n">size</span><span class="p">)),</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">col</span><span class="o">/</span><span class="n">size</span><span class="p">))</span>
+    <span class="n">padr</span> <span class="o">=</span> <span class="n">row</span><span class="o">*</span><span class="n">size</span> <span class="o">-</span> <span class="n">orientation</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">padc</span> <span class="o">=</span> <span class="n">col</span><span class="o">*</span><span class="n">size</span> <span class="o">-</span> <span class="n">orientation</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">orientation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">orientation</span><span class="p">,((</span><span class="n">padr</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span><span class="n">padr</span><span class="o">-</span><span class="p">(</span><span class="n">padr</span><span class="o">//</span><span class="mi">2</span><span class="p">)),(</span><span class="n">padc</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span><span class="n">padc</span><span class="o">-</span><span class="p">(</span><span class="n">padc</span><span class="o">//</span><span class="mi">2</span><span class="p">))),</span><span class="s">'constant'</span><span class="p">)</span>
+    <span class="n">region</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">region</span><span class="p">,((</span><span class="n">padr</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span><span class="n">padr</span><span class="o">-</span><span class="p">(</span><span class="n">padr</span><span class="o">//</span><span class="mi">2</span><span class="p">)),(</span><span class="n">padc</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span><span class="n">padc</span><span class="o">-</span><span class="p">(</span><span class="n">padc</span><span class="o">//</span><span class="mi">2</span><span class="p">))),</span><span class="s">'constant'</span><span class="p">)</span>  
+    <span class="n">hogmat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">row</span><span class="p">,</span><span class="n">col</span><span class="p">,</span><span class="n">bins</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">row</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">col</span><span class="p">):</span>
+            <span class="n">roi</span> <span class="o">=</span> <span class="n">orientation</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">size</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">size</span><span class="p">,</span><span class="n">j</span><span class="o">*</span><span class="n">size</span><span class="p">:(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">size</span><span class="p">]</span>
+            <span class="n">activ</span> <span class="o">=</span> <span class="n">region</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="n">size</span><span class="p">:(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">size</span><span class="p">,</span><span class="n">j</span><span class="o">*</span><span class="n">size</span><span class="p">:(</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">size</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">activ</span><span class="o">.</span><span class="nb">sum</span><span class="p">()</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">((</span><span class="n">roi</span><span class="p">[</span><span class="n">activ</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">bins</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">bins</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span><span class="n">bins</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">bins</span><span class="p">),</span><span class="n">density</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="n">hogmat</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">hist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">hogmat</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">HoG</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">size</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span><span class="n">bins</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
+    <span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">cv2</span><span class="o">.</span><span class="n">COLOR_BGR2GRAY</span><span class="p">)</span>
+    <span class="n">_</span><span class="p">,</span><span class="n">orientation</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">_</span><span class="p">,</span><span class="n">region</span> <span class="o">=</span> <span class="n">difference_filter</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="n">hogmat</span> <span class="o">=</span> <span class="n">histo</span><span class="p">(</span><span class="n">orientation</span><span class="p">,</span><span class="n">region</span><span class="p">,</span><span class="n">size</span><span class="p">,</span><span class="n">bins</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">hogmat</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s">'question3/zebra.png'</span><span class="p">)</span>
+<span class="n">hogmat</span> <span class="o">=</span> <span class="n">HoG</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+<span class="n">hogim</span> <span class="o">=</span> <span class="n">hogvis</span><span class="p">(</span><span class="n">hogmat</span><span class="p">,</span><span class="n">bsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">hogim</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><img src="pics/output_11_0.png" alt="png" /></p>
+
+<h2 id="3-hog-detector"><strong>3) HoG detector</strong></h2>
+
+<p>Write a function that takes a template and an image and returns the top detections found in the image. Your function should follow the definition given below. In your function you should first compute the histogram-of-gradient-orientation feature map for the image, then correlate the template with the feature map. Since the feature map and template are both three dimensional, you will want to filter each orientation separately and then sum up the results to get the final response. If the image of size H × W then this final response map will be of size (H/8) × (W/8).When constructing the list of top detections, your code should implement non-maxima suppression so that it doesn’t return overlapping detections. You can do this by sorting the responses in descending order of their score. Every time you add a detection to the list to return, check to make sure that the location of this detection is not too close to any of the detections already in the output list. You can estimate the overlap by computing the distance between a pair of detections and checking that the distance is greater than say 70% of the width of the template. Please test your implementation on two simple test cases and include result visualization in the report.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">correlation</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">w</span><span class="p">,</span><span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">pad</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="n">H</span><span class="p">,</span> <span class="n">W</span> <span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">kH</span><span class="p">,</span> <span class="n">kW</span><span class="p">,</span> <span class="n">kC</span> <span class="o">=</span> <span class="n">w</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">outH</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">H</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pad</span> <span class="o">-</span> <span class="n">kH</span><span class="p">)</span> <span class="o">//</span> <span class="n">stride</span>
+    <span class="n">outW</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">W</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pad</span> <span class="o">-</span> <span class="n">kW</span><span class="p">)</span> <span class="o">//</span> <span class="n">stride</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">outH</span><span class="p">,</span> <span class="n">outW</span><span class="p">))</span>
+    <span class="n">x_padded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">pad</span><span class="p">,</span><span class="n">pad</span><span class="p">),</span> <span class="s">'edge'</span><span class="p">)</span>
+    <span class="n">w_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">w</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">outH</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">outW</span><span class="p">):</span>
+            <span class="n">roi</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">row</span><span class="o">*</span><span class="n">stride</span><span class="p">:</span><span class="n">row</span><span class="o">*</span><span class="n">stride</span><span class="o">+</span><span class="n">kH</span><span class="p">,</span> <span class="n">col</span><span class="o">*</span><span class="n">stride</span><span class="p">:</span><span class="n">col</span><span class="o">*</span><span class="n">stride</span><span class="o">+</span><span class="n">kW</span><span class="p">]</span>
+            <span class="n">roi_norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">roi</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">roi</span> <span class="o">*</span> <span class="n">w</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">/</span><span class="p">(</span><span class="n">w_norm</span><span class="o">*</span><span class="n">roi_norm</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">out</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">hogdetector</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">template</span><span class="p">):</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">HoG</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+    <span class="n">whole</span> <span class="o">=</span> <span class="n">HoG</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">correlation</span><span class="p">(</span><span class="n">whole</span><span class="p">,</span><span class="n">window</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">img</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s">'question1/bsds_253027.jpg'</span><span class="p">)</span>
+<span class="n">template</span> <span class="o">=</span> <span class="n">cv2</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="s">'question3/zebra.png'</span><span class="p">)</span>
+<span class="n">out</span> <span class="o">=</span> <span class="n">hogdetector</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">template</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">print</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">out</span><span class="p">,</span><span class="n">cmap</span> <span class="o">=</span> <span class="s">'gray'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(10, 30)
+
+
+
+
+
+&lt;matplotlib.image.AxesImage at 0x120934110&gt;
+</code></pre></div></div>
+
+<p><img src="pics/output_16_2.png" alt="png" /></p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+</code></pre></div></div>
+
+  </div></div>
+
+      </section>
+    </main></body>
+</html>
